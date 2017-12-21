@@ -9,6 +9,8 @@ Daniel Orozco
 #include <termios.h>		//Used for UART
 #include <time.h>
 #include <wiringPi.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #define uart_device "/dev/ttyS0"
 #define n_retry_bus 4
@@ -24,6 +26,8 @@ Daniel Orozco
 
 #define ledBusMaster 0
 
+#define i2c_path "/home/pi/Desktop/./master"
+
 int uart0_filestream = -1;
 
 //----- TX BYTES -----
@@ -32,16 +36,24 @@ unsigned char *p_tx_buffer;
 //----- RX BYTES -----
 unsigned char rx_buffer[max_buffer_size];
 
+void launch_i2c(){
+    pid_t pid = fork();
+    if(pid==0){
+        static char *argv[] = {"","",NULL};
+        execv(i2c_path, argv);
+    }
+}
+
 void set_bus_master(char c){
     tx_buffer[1] = c;
 }
 
 void as_main(){
-    // run i2c
-    // int run_i2c = system("/home/pi/Desktop/./master");
     digitalWrite(ledBusMaster, HIGH);
     set_bus_master(bus_master);    
     printf("Running as Main\n");
+    // run i2c
+    launch_i2c();
     int alive = -1;
     while(1){
 	    usleep(1000000);
