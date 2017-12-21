@@ -13,29 +13,33 @@ Daniel Orozco
 #define uart_device "/dev/ttyS0"
 #define n_retry_bus 4
 #define n_retry_read 10
+#define n_retry_read_bus_master 5
 #define max_time_retry_bus 60
 #define max_time_retry_read 2
+#define max_time_retry_read_bus_master 2
+#define max_time_ventaja 10
 #define max_buffer_size 256
 #define alive_char '1'
+#define bus_master '2'
 
-#define ledAlive 0
-#define ledDead 1
+#define ledBusMaster 0
+/* #define ledAlive 0
+#define ledDead 1 */
+
+int uart0_filestream = -1;
 
 //----- TX BYTES -----
 unsigned char tx_buffer[20];
 unsigned char *p_tx_buffer;
-
+//----- RX BYTES -----
 unsigned char rx_buffer[max_buffer_size];
 
-int main (void)
-{
+int main (void){
 
-    int uart0_filestream = -1;
-
+    //int uart0_filestream = -1;
     uart0_filestream = open("/dev/ttyS0", O_RDWR | O_NOCTTY | O_NDELAY);		//Open in non blocking read/write mode
 
-    if (uart0_filestream == -1)
-    {
+    if (uart0_filestream == -1){
         //ERROR - CAN'T OPEN SERIAL PORT
         printf("Error - Unable to open UART.  Ensure it is not in use by another application\n");
     }
@@ -44,11 +48,14 @@ int main (void)
         printf("wiringPi setup failed !\n");
     }
 
-    pinMode(ledAlive, OUTPUT);
-    pinMode(ledDead, OUTPUT);
+    pinMode(ledBusMaster, OUTPUT);
+    /* pinMode(ledAlive, OUTPUT);
+    pinMode(ledDead, OUTPUT); */
 
-    digitalWrite(ledAlive, HIGH);
-    digitalWrite(ledDead, LOW);
+    /* digitalWrite(ledAlive, HIGH);
+    digitalWrite(ledDead, LOW); */
+
+    usleep(max_time_ventaja * 1000000);
 
     struct termios options;
     tcgetattr(uart0_filestream, &options);
@@ -61,24 +68,16 @@ int main (void)
 
     p_tx_buffer = &tx_buffer[0];
     *p_tx_buffer++ = alive_char;
-       
-    int alive = -1;
-    
-    while(alive){
-        int s = send_alive_signal(uart0_filestream);
-        int r = read_alive_signal(uart0_filestream);
-        if (r)
-            printf("Main ALIVE!\n");
-        else
-            alive = 0;
-    }
+    *p_tx_buffer++ = bus_master;
 
-    close(uart0_filestream);
+    if (read_bus_master(uart0_filestream))
+        as_main();
+    else
+        as_backup();
+}
 
-    digitalWrite(ledAlive, LOW);
-    digitalWrite(ledDead, HIGH);
-
-    while(1){};
+void set_bus_master(char c){
+    tx_buffer[1] = c;
 }
 
 int reopen_uart(int uart_filestream){
@@ -121,7 +120,7 @@ int send_alive_signal(int uart_filestream){
     int count = write(uart_filestream,  &tx_buffer[0], (p_tx_buffer - &tx_buffer[0]));		//Filestream, bytes to write, number of bytes to write
     if (count < 0)
         return 0;
-    printf("Backup ALIVE!\n");
+    printf("Main ALIVE!\n");
     return 1;
 }
 
@@ -138,11 +137,49 @@ int read_alive_signal(int uart_filestream){
         rx_buffer[rx_length] = '\0';
         if(rx_buffer[0] == alive_char)
             return 1;
-        rx_buffer[0] = '\0';
+    	rx_buffer[0] = '\0';
         send_alive_signal(uart_filestream);
         usleep(max_time_retry_read * 1000000);
         retry++;
     }
 
     return 0;
+}
+
+int read_bus_master(int uart_filestream){
+    if (uart_filestream == -1)
+        uart_filestream = reopen_uart(uart_filestream);
+    if (uart_filestream == -1){
+        printf("Unable to read data\n");
+        return 0;
+    }
+    int retry = 0;
+    while(retry < n_retry_read_bus_master){
+        int rx_length = read(uart_filestream, (void*)rx_buffer, max_buffer_size-1);		//Filestream, buffer to store in, number of bytes to read (max)
+        rx_buffer[rx_length] = '\0';
+        if(rx_buffer[1] != bus_master)
+            return 0;
+    	rx_buffer[0] = '\0';
+        usleep(max_time_retry_read_bus_master * 1000000);
+        retry++;
+    }
+    return 1;
+}
+
+void as_main(){
+    // run i2c
+    digitalWrite(ledBusMaster, HIGH);
+    set_bus_master(bus_master);    
+    int alive = -1;
+    
+    while(1)
+        int s = send_alive_signal(uart0_filestream);
+}
+
+void as_backup(){
+    digitalWrite(ledBusMaster, LOW);
+    int alive = -1;    
+    while(alive)
+        alive = read_alive_signal(uart0_filestream);        
+    as_main();
 }
