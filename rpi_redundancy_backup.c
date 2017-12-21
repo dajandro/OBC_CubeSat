@@ -90,7 +90,8 @@ int main (void){
 
     pinMode(ledBusMaster, OUTPUT);
 
-    //usleep(max_time_ventaja * 1000000);
+    // tiempo de ventaja por si inician al mismo tiempo
+    usleep(max_time_ventaja * 1000000);
 
     struct termios options;
     tcgetattr(uart0_filestream, &options);
