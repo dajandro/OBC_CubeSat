@@ -17,13 +17,11 @@ Daniel Orozco
 #define max_time_retry_bus 60
 #define max_time_retry_read 2
 #define max_time_retry_read_bus_master 2
-#define max_buffer_size 256
+#define max_buffer_size 20
 #define alive_char '1'
 #define bus_master '1'
 
 #define ledBusMaster 0
-/* #define ledAlive 0
-#define ledDead 1 */
 
 int uart0_filestream = -1;
 
@@ -32,6 +30,36 @@ unsigned char tx_buffer[20];
 unsigned char *p_tx_buffer;
 //----- RX BYTES -----
 unsigned char rx_buffer[max_buffer_size];
+
+void set_bus_master(char c){
+    tx_buffer[1] = c;
+}
+
+void as_main(){
+    // run i2c
+    // int run_i2c = system("/home/pi/Desktop/./master");
+    digitalWrite(ledBusMaster, HIGH);
+    set_bus_master(bus_master);
+	printf("Running as Main\n");
+    int alive = -1;
+    while(1){
+	    usleep(1000000);
+        int s = send_alive_signal(uart0_filestream);
+    }
+}
+
+void as_backup(){
+    digitalWrite(ledBusMaster, LOW);
+	printf("Running as Backup\n");
+    int alive = -1;    
+    while(alive){
+        printf("Main alive\n");
+        rx_buffer[0] = '\0';
+        rx_buffer[1] = '\0';
+        alive = read_alive_signal(uart0_filestream);
+    }
+    as_main();
+}
 
 int main (void){
 
@@ -48,12 +76,7 @@ int main (void){
     }
 
     pinMode(ledBusMaster, OUTPUT);
-    /* pinMode(ledAlive, OUTPUT);
-    pinMode(ledDead, OUTPUT); */
-
-    /* digitalWrite(ledAlive, HIGH);
-    digitalWrite(ledDead, LOW); */
-
+    
     struct termios options;
     tcgetattr(uart0_filestream, &options);
     options.c_cflag = B9600 | CS8 | CLOCAL | CREAD;		//<Set baud rate
@@ -71,10 +94,6 @@ int main (void){
         as_main();
     else
         as_backup();
-}
-
-void set_bus_master(char c){
-    tx_buffer[1] = c;
 }
 
 int reopen_uart(int uart_filestream){
@@ -114,10 +133,11 @@ int send_alive_signal(int uart_filestream){
         return 0;
     }
     rx_buffer[0] = '\0';
+    rx_buffer[1] = '\0';
     int count = write(uart_filestream,  &tx_buffer[0], (p_tx_buffer - &tx_buffer[0]));		//Filestream, bytes to write, number of bytes to write
     if (count < 0)
         return 0;
-    printf("Main ALIVE!\n");
+    //printf("Main ALIVE!\n");
     return 1;
 }
 
@@ -132,18 +152,22 @@ int read_alive_signal(int uart_filestream){
     while(retry < n_retry_read){
         int rx_length = read(uart_filestream, (void*)rx_buffer, max_buffer_size-1);		//Filestream, buffer to store in, number of bytes to read (max)
         rx_buffer[rx_length] = '\0';
-        if(rx_buffer[0] == alive_char)
+        if(rx_buffer[0] == alive_char){
+            rx_buffer[0] = '\0';
+            rx_buffer[1] = '\0';
             return 1;
+	    }
     	rx_buffer[0] = '\0';
-        send_alive_signal(uart_filestream);
+    	rx_buffer[1] = '\0';
+        //send_alive_signal(uart_filestream);
         usleep(max_time_retry_read * 1000000);
         retry++;
     }
-
     return 0;
 }
 
 int read_bus_master(int uart_filestream){
+	printf("Reading bus master\n");
     if (uart_filestream == -1)
         uart_filestream = reopen_uart(uart_filestream);
     if (uart_filestream == -1){
@@ -154,29 +178,12 @@ int read_bus_master(int uart_filestream){
     while(retry < n_retry_read_bus_master){
         int rx_length = read(uart_filestream, (void*)rx_buffer, max_buffer_size-1);		//Filestream, buffer to store in, number of bytes to read (max)
         rx_buffer[rx_length] = '\0';
-        if(rx_buffer[1] != bus_master)
+        if(rx_buffer[1] == '2')
             return 0;
     	rx_buffer[0] = '\0';
+    	rx_buffer[1] = '\0';
         usleep(max_time_retry_read_bus_master * 1000000);
         retry++;
     }
     return 1;
-}
-
-void as_main(){
-    // run i2c
-    digitalWrite(ledBusMaster, HIGH);
-    set_bus_master(bus_master);    
-    int alive = -1;
-    
-    while(1)
-        int s = send_alive_signal(uart0_filestream);
-}
-
-void as_backup(){
-    digitalWrite(ledBusMaster, LOW);
-    int alive = -1;    
-    while(alive)
-        alive = read_alive_signal(uart0_filestream);        
-    as_main();
 }
