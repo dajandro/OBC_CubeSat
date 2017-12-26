@@ -17,6 +17,8 @@ Daniel Orozco
 #define slave1_address 0x13
 #define slave2_address 0x08
 
+#define img_path "/home/pi/Desktop/img.bmp"
+
 int deviceHandle1;
 int deviceHandle2;
 int readBytes1;
@@ -68,8 +70,9 @@ int validar_voltaje_de_baterias(float valor);
 void temperatura_de_baterias();
 float get_temperatura_de_baterias();
 int validar_temperatura_de_baterias(float valor);
-void enviar_datos_a_transmitir(int tipo);
-	
+void enviar_img(char *fileName);
+void enviar_datos_a_transmitir(int tipo);	
+
 int main (void)
 {
 	printf("Raspberry Pi I2C\n");
@@ -336,9 +339,22 @@ int validar_temperatura_de_baterias(float valor){
 	return ((valor>=-128.0)&&(valor<=128.0));
 }
 
+void enviar_img(char *fileName){
+    FILE *file = fopen(fileName, "r");
+	int c;
+	char img_chr[1];
+
+    if (file == NULL) return NULL; //could not open file
+    
+    while ((c = fgetc(file)) != EOF) {
+		img_chr[0] = (char)c;
+		readBytes2 = write(deviceHandle2, img_chr, 1);
+    }
+}
+
 void enviar_datos_a_transmitir(int tipo){
 	printf("Conectando con modulo de comunicaciones\n");
-    	char inst[8] = "00000000";
+    char inst[8] = "00000000";
 	readBytes2 = write(deviceHandle2, inst, 8);
 
 	char value[64];
@@ -400,6 +416,22 @@ void enviar_datos_a_transmitir(int tipo){
 					printf("At time: ");
 					puts(time_buffer);
 
+					enviar_img(img_path);
+						
+					printf("Transmision finalizada\n");
+					timer = time(NULL);
+					tm_info = localtime(&timer);
+					strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
+					printf("At time: ");
+					puts(time_buffer);
+					break;
+					/* printf("Enviando imagen de 900 KBytes\n");
+					timer = time(NULL);
+					tm_info = localtime(&timer);
+					strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
+					printf("At time: ");
+					puts(time_buffer);
+
 					for(int i=0; i<740; i++){
 						for(int j=0; j<45; j++){
 							readBytes2 = write(deviceHandle2, pixel, 16);
@@ -412,7 +444,7 @@ void enviar_datos_a_transmitir(int tipo){
 					strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
 					printf("At time: ");
 					puts(time_buffer);
-					break;
+					break; */
 				default: break;
 			}
 		}
