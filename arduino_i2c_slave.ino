@@ -11,6 +11,10 @@ String c1 = "00000000"; // state_of_charge
 String c2 = "00000001"; // voltaje_data_bus
 String c3 = "00000010"; // temperatura_baterias
 
+String c1b = "10000000"; // state_of_charge_backup
+String c2b = "10000001"; // voltaje_data_bus_backup
+String c3b = "10000010"; // temperatura_baterias_backup
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(13, OUTPUT);
@@ -54,7 +58,13 @@ void receiveData(int byteCount){
   }
   // Data
   else{
-    Serial.print("Data received: ");
+    if (data_read == c1 || data_read == c2 || data_read == c3){
+      Serial.print("Data received from RP1: ");
+    }
+    if (data_read == c1b || data_read == c2b || data_read == c3b){
+      Serial.print("Data received  from RP2: ");
+    }
+    //Serial.print("Data received: ");
     Serial.println(data_read);
   }
 }
@@ -63,7 +73,7 @@ void receiveData(int byteCount){
 void sendData(){
   data_write[0] = ' ';
   data_write[1] = ' ';
-  if (data_read == c1){
+  if (data_read == c1 || data_read == c1b){
     for(int i=0; i<16; i++){
       int rnd = random(0,2);
       char b[2];
@@ -73,7 +83,7 @@ void sendData(){
       data_write[i] = b[0];
     }
   }
-  else if (data_read == c2){
+  else if (data_read == c2 || data_read == c2b){
     for(int i=0; i<13; i++){
       int rnd = random(0,2);
       char b[2];
@@ -90,7 +100,7 @@ void sendData(){
     data_write[14] = b[0];
     data_write[15] = b[0];
   }
-  else if (data_read == c3){
+  else if (data_read == c3 || data_read == c3b){
     for(int i=0; i<12; i++){
       int rnd = random(0,2);
       char b[2];

@@ -88,12 +88,12 @@ int main (void)
 
 	int toca120 = 0;
 
-	/*if (connect_slave_1(slave1_address) == 1){
+	if (connect_slave_1(slave1_address) == 1){
 		while(terminate){
 			end = time(NULL);
 			elapsed = difftime(end, start);
-			//if (elapsed > 5400.0) // test 2 - 1h 30 minutos
-			if (elapsed > 20.0) // test 1 - 20 s
+			if (elapsed > 5400.0) // test 2 - 1h 30 minutos
+			//if (elapsed > 20.0) // test 1 - 20 s
 				terminate = 0;
 			else {
 				if(toca120%2 == 0){
@@ -105,22 +105,23 @@ int main (void)
 				temperatura_de_baterias();
 				nc3++;
 				toca120++;
-				//usleep(60000000); // test 2 - 60s
-				usleep(2000000); // test 1 - 2s
+				logs_to_txts();
+				usleep(60000000); // test 2 - 60s
+				//usleep(2000000); // test 1 - 2s
 			}
 		}
 		close(deviceHandle1);
 		logs_to_txts();
-	}*/
+	}
 
-	if (connect_slave_2(slave2_address) == 1){
+	/* if (connect_slave_2(slave2_address) == 1){
 		// drive some tests
         	//send_picture();
 		enviar_datos_a_transmitir(0);
 		//enviar_datos_a_transmitir(1);
 		// close connection and return
 		close(deviceHandle2);
-	}
+	} */
 	
 	return 0;
 }
@@ -189,8 +190,8 @@ int connect_slave_2(int slave_address){
 void logs_to_txts(){
 	FILE * datos_file;
 
-	datos_file = fopen("/home/pi/Desktop/dataC1.txt","w");
-	for(int i=0; i<n_estado_carga; i++){
+	datos_file = fopen("/home/pi/Desktop/dataC1.txt","a");
+	for(int i=0; i<nc1; i++){
 		char entry[36] = "";
 		strcpy(entry, log_estado_de_carga_bateria[i].id);
 		strcat(entry, ",");
@@ -200,8 +201,8 @@ void logs_to_txts(){
 	}
 	fclose(datos_file);
 
-	datos_file = fopen("/home/pi/Desktop/dataC2.txt","w");
-	for(int i=0; i<n_voltaje; i++){
+	datos_file = fopen("/home/pi/Desktop/dataC2.txt","a");
+	for(int i=0; i<nc2; i++){
 		char entry[36] = "";
 		strcpy(entry, log_voltaje_bateria[i].id);
 		strcat(entry, ",");
@@ -211,8 +212,8 @@ void logs_to_txts(){
 	}
 	fclose(datos_file);
 
-	datos_file = fopen("/home/pi/Desktop/dataC3.txt","w");
-	for(int i=0; i<n_temperatura; i++){
+	datos_file = fopen("/home/pi/Desktop/dataC3.txt","a");
+	for(int i=0; i<nc3; i++){
 		char entry[36] = "";
 		strcpy(entry, log_temperatura_bateria[i].id);
 		strcat(entry, ",");

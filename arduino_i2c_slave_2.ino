@@ -43,6 +43,7 @@ void receiveData(int byteCount){
   // ACK
   if (n == 1){
     Serial.println("ACK received");
+    Serial.println(data_read);
   }
   // Data
   else{
