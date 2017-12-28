@@ -60,7 +60,8 @@ int nc3 = 0;
 int binTwosComplementToInt(char binary[], int bits);
 int connect_slave_1(int slave_address);
 int connect_slave_2(int slave_address);
-void logs_to_txts();
+void logs_to_txts_1();
+void logs_to_txts_2();
 void estado_de_carga();
 int get_estado_de_carga();
 int validar_estado_de_carga();
@@ -101,17 +102,18 @@ int main (void)
 					voltaje_de_baterias();
 					nc1++;
 					nc2++;
+					logs_to_txts_1();
 				}
 				temperatura_de_baterias();
 				nc3++;
 				toca120++;
-				logs_to_txts();
+				logs_to_txts_2();
 				usleep(60000000); // test 2 - 60s
 				//usleep(2000000); // test 1 - 2s
 			}
 		}
 		close(deviceHandle1);
-		logs_to_txts();
+		//logs_to_txts();
 	}
 
 	/* if (connect_slave_2(slave2_address) == 1){
@@ -187,11 +189,12 @@ int connect_slave_2(int slave_address){
 	return 1;
 }
 
-void logs_to_txts(){
+
+void logs_to_txts_1(){
 	FILE * datos_file;
 
 	datos_file = fopen("/home/pi/Desktop/dataC1.txt","a");
-	for(int i=0; i<nc1; i++){
+	for(int i=nc1-1; i<nc1; i++){
 		char entry[36] = "";
 		strcpy(entry, log_estado_de_carga_bateria[i].id);
 		strcat(entry, ",");
@@ -202,7 +205,7 @@ void logs_to_txts(){
 	fclose(datos_file);
 
 	datos_file = fopen("/home/pi/Desktop/dataC2.txt","a");
-	for(int i=0; i<nc2; i++){
+	for(int i=nc2-1; i<nc2; i++){
 		char entry[36] = "";
 		strcpy(entry, log_voltaje_bateria[i].id);
 		strcat(entry, ",");
@@ -211,9 +214,13 @@ void logs_to_txts(){
 		fprintf(datos_file, entry, log_voltaje_bateria[i].valor);
 	}
 	fclose(datos_file);
+}
 
+void logs_to_txts_2(){
+	FILE * datos_file;
+	
 	datos_file = fopen("/home/pi/Desktop/dataC3.txt","a");
-	for(int i=0; i<nc3; i++){
+	for(int i=nc3-1; i<nc3; i++){
 		char entry[36] = "";
 		strcpy(entry, log_temperatura_bateria[i].id);
 		strcat(entry, ",");
