@@ -74,6 +74,195 @@ int validar_temperatura_de_baterias(float valor);
 void enviar_img(char *fileName);
 void enviar_datos_a_transmitir(int tipo);	
 
+void unitary_tests(){
+    int n_success = 0;
+    int total = 13;
+    if(unitary_test_connect_slave(slave1_address)){
+        printf("Test unitario - Conectar esclavo: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Conectar esclavo: Fail\n");
+    if(unitary_test_logs_to_txt() > 0){
+        printf("Test unitario - Escribir registros a archivo de texto: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Escribir registros a archivo de texto: Fail\n");
+    if(unitary_test_get_estado_de_carga()){
+        printf("Test unitario - Obtener estado de carga: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Obtener estado de carga: Fail\n");
+    if(unitary_test_validar_estado_de_carga()){
+        printf("Test unitario - Validar estado de carga: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Validar estado de carga: Fail\n");
+    if(unitary_test_almacenar_estado_de_carga()){
+        printf("Test unitario - Almacenar estado de carga: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Almacenar estado de carga: Fail\n");
+    if(unitary_test_get_voltaje_de_baterias()){
+        printf("Test unitario - Obtener voltaje de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Obtener voltaje de las baterias: Fail\n");
+    if(unitary_test_validar_voltaje_de_baterias()){
+        printf("Test unitario - Validar voltaje de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Validar voltaje de las baterias: Fail\n");
+    if(unitary_test_almacenar_voltaje_de_baterias()){
+        printf("Test unitario - Almacenar voltaje de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Almacenar voltaje de las baterias: Fail\n");
+
+    if(unitary_test_get_temperatura_de_baterias()){
+        printf("Test unitario - Obtener temperatura de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Obtener temperatura de las baterias: Fail\n");
+    if(unitary_test_validar_temperatura_de_baterias()){
+        printf("Test unitario - Validar temperatura de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Validar temperatura de las baterias: Fail\n");
+    if(unitary_test_almacenar_temperatura_de_baterias()){
+        printf("Test unitario - Almacenar temperatura de las baterias: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Almacenar temperatura de las baterias: Fail\n");
+    if(unitary_test_enviar_imagen()){
+        printf("Test unitario - Enviar imagen: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Enviar imagen: Fail\n");
+    if(unitary_test_enviar_registros()){
+        printf("Test unitario - Enviar registros: Success\n");
+        n_success++;
+    }
+    else
+        printf("Test unitario - Enviar registros: Fail\n");
+    printf("%d tests exitosos de %d realizados\n", n_success, total);
+    printf("%d tests fallidos de %d realizados\n", total-n_success, total);
+    
+}
+
+int unitary_test_connect_slave(int slave_address){
+    if (connect_slave_1(slave1_address) == 1)
+        return 1;
+    return 0;
+}
+
+int unitary_test_logs_to_txt(){
+    FILE * datos_file;        
+    datos_file = fopen("/home/pi/Desktop/dataTest.txt","a");
+    int write = fprintf(datos_file, "Test\n");
+    fclose(datos_file);
+    return write;
+}
+
+int unitary_test_get_estado_de_carga(){
+    char inst[8] = "00000000";
+    readBytes1 = write(deviceHandle1, inst, 8);
+    readBytes1 = read(deviceHandle1, data1, 16);
+    if (readBytes1 != 16)
+		return 0;	
+    return 1;    
+}
+
+int unitary_test_validar_estado_de_carga(){
+    if (!validar_estado_de_carga(655355))
+        return 1;
+    return 0;
+}
+
+int unitary_test_almacenar_estado_de_carga(){
+    int value = 0;
+	timer = time(NULL);
+	tm_info = localtime(&timer);
+	strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
+	strcpy(log_estado_de_carga_bateria[nc1].id, "TN");
+	strcpy(log_estado_de_carga_bateria[nc1].time_stamp, time_buffer);
+    log_estado_de_carga_bateria[nc1].valor = (float)value;
+    return 1;
+}
+
+int unitary_test_get_voltaje_de_baterias(){
+    char inst[8] = "00000001";
+    readBytes1 = write(deviceHandle1, inst, 8);
+    readBytes1 = read(deviceHandle1, data1, 16);
+    if (readBytes1 != 16)
+		return 0;	
+    return 1;    
+}
+
+int unitary_test_validar_voltaje_de_baterias(){
+    if (!validar_voltaje_de_baterias(16700.0))
+        return 1;
+    return 0;
+}
+
+int unitary_test_almacenar_voltaje_de_baterias(){
+    float value = 0.0;
+	timer = time(NULL);
+	tm_info = localtime(&timer);
+	strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
+	strcpy(log_voltaje_bateria[nc2].id, "P2");
+	strcpy(log_voltaje_bateria[nc2].time_stamp, time_buffer);
+	log_voltaje_bateria[nc2].valor = value;
+    return 1;
+}
+
+int unitary_test_get_temperatura_de_baterias(){
+    char inst[8] = "00000010";
+    readBytes1 = write(deviceHandle1, inst, 8);
+    readBytes1 = read(deviceHandle1, data1, 16);
+    if (readBytes1 != 16)
+		return 0;	
+    return 1;    
+}
+
+int unitary_test_validar_temperatura_de_baterias(){
+    if (!validar_temperatura_de_baterias(168.0))
+        return 1;
+    return 0;
+}
+
+int unitary_test_almacenar_temperatura_de_baterias(){
+    float value = 0.0;
+	timer = time(NULL);
+	tm_info = localtime(&timer);
+	strftime(time_buffer, 26, "%d/%m/%Y %H:%M:%S", tm_info);
+	strcpy(log_temperatura_bateria[nc3].id, "P3");
+	strcpy(log_temperatura_bateria[nc3].time_stamp, time_buffer);
+	log_temperatura_bateria[nc3].valor = value;
+    return 1;
+}
+
+int unitary_test_enviar_imagen(){
+    enviar_datos_a_transmitir(1);
+    return 1;
+}
+
+int unitary_test_enviar_registros(){
+    enviar_datos_a_transmitir(1);
+    return 1;
+}
+
 int main (void)
 {
 	printf("Raspberry Pi I2C\n");
